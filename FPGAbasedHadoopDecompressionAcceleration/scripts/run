@@ -1,0 +1,5 @@
+#!/bin/bash
+
+hadoop fs -rm /user/spark/fpga/compress/lzo/part-r-00000.lzo.index
+hadoop jar $HADOOP_CLASSPATH/hadoop-lzo-0.4.18.jar com.hadoop.compression.lzo.DistributedLzoIndexer /user/spark/fpga/compress/lzo/part-r-00000.lzo
+
