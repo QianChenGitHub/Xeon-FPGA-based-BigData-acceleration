@@ -17,7 +17,7 @@ import java.util.zip.CRC32;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.compress.BlockDecompressorStream;
-
+import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.Decompressor;
 
 public class FpgaInputStream extends BlockDecompressorStream{
@@ -38,10 +38,12 @@ public class FpgaInputStream extends BlockDecompressorStream{
     public FpgaInputStream(InputStream in, Decompressor decompressor, int bufferSize) throws IOException{
         super(in,decompressor,bufferSize);
         readHeader(in);
+    //    System.out.println("com.hadoop.compression.lzo.FpgaInputStream: instanced and readHeader finished");
     }
 
     private static void readFully( InputStream in, byte buf[],
                                    int off, int len ) throws IOException, EOFException {
+   //     System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readFully()");
         int toRead = len;
         while ( toRead > 0 ) {
             int ret = in.read( buf, off, toRead );
@@ -55,6 +57,7 @@ public class FpgaInputStream extends BlockDecompressorStream{
 
     private static int readInt(InputStream in, byte[] buf, int len)
             throws IOException {
+    //    System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readInt()");
         readFully(in, buf, 0, len);
         int ret = (0xFF & buf[0]) << 24;
         ret    |= (0xFF & buf[1]) << 16;
@@ -66,6 +69,7 @@ public class FpgaInputStream extends BlockDecompressorStream{
 
     private static int readHeaderItem(InputStream in, byte[] buf, int len,
                                       Adler32 adler, CRC32 crc32) throws IOException {
+      //  System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readHeaderItem()");
         int ret = readInt(in, buf, len);
         adler.update(buf, 0, len);
         crc32.update(buf, 0, len);
@@ -74,6 +78,7 @@ public class FpgaInputStream extends BlockDecompressorStream{
     }
 
     protected void readHeader(InputStream in) throws IOException {
+     //   System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readHeader()");
         readFully(in, buf, 0, 9);
         if (!Arrays.equals(buf, LzopCodec.LZO_MAGIC)) {
             throw new IOException("Invalid LZO header");
@@ -170,5 +175,146 @@ public class FpgaInputStream extends BlockDecompressorStream{
             }
         }
     }
+
+  /**
+   * Take checksums recorded from block header and verify them against
+   * those recorded by the decomrpessor.
+   */
+  private void verifyChecksums() throws IOException {
+   // System.out.println("com.hadoop.compression.lzo.FpgaInputStream: verifyChecksums <<");
+/*    LzopDecompressor ldecompressor = ((LzopDecompressor)decompressor);
+    for (Map.Entry<DChecksum,Integer> chk : dcheck.entrySet()) {
+      System.out.println("com.hadoop.compression.lzo.LzopInputStream:ldecompressor.verifyDChecksum called");
+      if (!ldecompressor.verifyDChecksum(chk.getKey(), chk.getValue())) {
+        throw new IOException("Corrupted uncompressed block");
+      }
+    }
+
+    if (!ldecompressor.isCurrentBlockUncompressed()) {
+      for (Map.Entry<CChecksum,Integer> chk : ccheck.entrySet()) {
+        System.out.println("com.hadoop.compression.lzo.LzopInputStream:ldecompressor.verifyCChecksum called");
+        if (!ldecompressor.verifyCChecksum(chk.getKey(), chk.getValue())) {
+          throw new IOException("Corrupted compressed block");
+        }
+      }
+    }
+*/
+  }
+
+
+
+
+  @Override
+  protected int decompress(byte[] b, int off, int len) throws IOException {
+  //  System.out.println("com.hadoop.compression.lzo.FpgaInputStream: decompress() off is "+off+" len is "+len);
+    // Check if we are the beginning of a block
+    if (noUncompressedBytes == uncompressedBlockSize) {
+      // Get original data size
+      try {
+        byte[] tempBuf = new byte[4];
+        uncompressedBlockSize =  readInt(in, tempBuf, 4);
+        noCompressedBytes += 4;
+      } catch (EOFException e) {
+        return -1;
+      }
+      noUncompressedBytes = 0;
+    }
+    decompressor.setDictionary(b,off,uncompressedBlockSize);
+    int n = 0;
+    while ((n = decompressor.decompress(b, off, len)) == 0) {
+      if (decompressor.finished() || decompressor.needsDictionary()) {
+        if (noUncompressedBytes >= uncompressedBlockSize) {
+          eof = true;
+          return -1;
+        }
+      }
+      if (decompressor.needsInput()) {
+        try {
+          getCompressedData();
+        } catch (EOFException e) {
+          eof = true;
+          return -1;
+        } catch (IOException e) {
+          LOG.warn("IOException in getCompressedData; likely LZO corruption.", e);
+          throw e;
+        }
+      }
+    }
+    // Note the no. of decompressed bytes read from 'current' block
+    noUncompressedBytes += n;
+    return n;
+  }
+
+  /**
+   * Read checksums and feed compressed block data into decompressor.
+   */
+  @Override
+  protected int getCompressedData() throws IOException {
+    checkStream();
+    verifyChecksums();
+
+    // Get the size of the compressed chunk
+    int compressedLen = readInt(in, buf, 4);
+    noCompressedBytes += 4;
+
+    if (compressedLen > LzoCodec.MAX_BLOCK_SIZE) {
+      throw new IOException("Compressed length " + compressedLen +
+        " exceeds max block size " + LzoCodec.MAX_BLOCK_SIZE +
+        " (probably corrupt file)");
+    }
+
+    FpgaDecompressor fdecompressor = (FpgaDecompressor)decompressor;
+    // If the lzo compressor compresses a block of data, and that compression
+    // actually makes the block larger, it writes the block as uncompressed instead.
+    // In this case, the compressed size and the uncompressed size in the header
+    // are identical, and there is NO compressed checksum written.
+    fdecompressor.setCurrentBlockUncompressed(compressedLen >= uncompressedBlockSize);
+
+    for (DChecksum chk : dcheck.keySet()) {
+      dcheck.put(chk, readInt(in, buf, 4));
+      noCompressedBytes += 4;
+    }
+
+    if (!fdecompressor.isCurrentBlockUncompressed()) {
+      for (CChecksum chk : ccheck.keySet()) {
+        ccheck.put(chk, readInt(in, buf, 4));
+        noCompressedBytes += 4;
+      }
+    }
+
+    fdecompressor.resetChecksum();
+
+    // Read len bytes from underlying stream
+    if (compressedLen > buffer.length) {
+      buffer = new byte[compressedLen];
+    }
+    readFully(in, buffer, 0, compressedLen);
+    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readFully finished");
+    noCompressedBytes += compressedLen;
+
+    // Send the read data to the decompressor.
+    fdecompressor.setInput(buffer, 0, compressedLen);
+    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream:  compressedLen is "+compressedLen);
+    return compressedLen;
+  }
+
+  @Override
+  public void close() throws IOException {
+    byte[] b = new byte[4096];
+    while (!decompressor.finished()) {
+      //decompressor.decompress(b, 0, b.length);
+    }
+    super.close();
+    try {
+      verifyChecksums();
+    } catch (IOException e) {
+      // LZO requires that each file ends with 4 trailing zeroes.  If we are here,
+      // the file didn't.  It's not critical, though, so log and eat it in this case.
+      LOG.warn("Incorrect LZO file format: file did not end with four trailing zeroes.", e);
+    } finally{
+      //return the decompressor to the pool, the function itself handles null.
+      CodecPool.returnDecompressor(decompressor);
+    }
+  }
 
 }
