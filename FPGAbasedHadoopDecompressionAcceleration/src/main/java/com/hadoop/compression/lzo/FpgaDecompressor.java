@@ -42,8 +42,6 @@ public class FpgaDecompressor implements Decompressor {
     static {
 	    //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: try fpga lib loading");
             int itg=9;
-            FpgaLibraryWrapper flw = new FpgaLibraryWrapper();
-            int iii = flw.intMethod(itg);
             if(FpgaLibraryLoader.isFpgaLibraryLoaded()){
               //Initiate the FPGA library
               try{
