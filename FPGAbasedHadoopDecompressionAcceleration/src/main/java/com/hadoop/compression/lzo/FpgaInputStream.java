@@ -39,12 +39,10 @@ public class FpgaInputStream extends BlockDecompressorStream{
     public FpgaInputStream(InputStream in, Decompressor decompressor, int bufferSize) throws IOException{
         super(in,decompressor,bufferSize);
         readHeader(in);
-    //    System.out.println("com.hadoop.compression.lzo.FpgaInputStream: instanced and readHeader finished");
     }
 
     private static void readFully( InputStream in, byte buf[],
                                    int off, int len ) throws IOException, EOFException {
-   //     System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readFully()");
         int toRead = len;
         while ( toRead > 0 ) {
             int ret = in.read( buf, off, toRead );
@@ -58,7 +56,6 @@ public class FpgaInputStream extends BlockDecompressorStream{
 
     private static int readInt(InputStream in, byte[] buf, int len)
             throws IOException {
-    //    System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readInt()");
         readFully(in, buf, 0, len);
         int ret = (0xFF & buf[0]) << 24;
         ret    |= (0xFF & buf[1]) << 16;
@@ -70,7 +67,6 @@ public class FpgaInputStream extends BlockDecompressorStream{
 
     private static int readHeaderItem(InputStream in, byte[] buf, int len,
                                       Adler32 adler, CRC32 crc32) throws IOException {
-      //  System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readHeaderItem()");
         int ret = readInt(in, buf, len);
         adler.update(buf, 0, len);
         crc32.update(buf, 0, len);
@@ -79,7 +75,6 @@ public class FpgaInputStream extends BlockDecompressorStream{
     }
 
     protected void readHeader(InputStream in) throws IOException {
-     //   System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readHeader()");
         readFully(in, buf, 0, 9);
         if (!Arrays.equals(buf, LzopCodec.LZO_MAGIC)) {
             throw new IOException("Invalid LZO header");
@@ -220,7 +215,6 @@ public class FpgaInputStream extends BlockDecompressorStream{
       }
       noUncompressedBytes = 0;
     }
-  //  System.out.println("com.hadoop.compression.lzo.FpgaInputStream: uncompressedBlockSize is "+uncompressedBlockSize+"<=================");
     decompressor.setDictionary(b,off,uncompressedBlockSize);
     int n = 0;
     while ((n = decompressor.decompress(b, off, len)) == 0) {
@@ -230,27 +224,20 @@ public class FpgaInputStream extends BlockDecompressorStream{
           return -1;
         }
       }
-  //    System.out.println("com.hadoop.compression.lzo.FpgaInputStream: decompressor.needsInput()");
       if (decompressor.needsInput()) {
         try {
-          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: try to getCompressedData()");
           getCompressedData();
-          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: getCompressedData() finished");
-        } catch (EOFException e) {
-          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream:  trace1");
+         } catch (EOFException e) {
           eof = true;
           return -1;
         } catch (IOException e) {
-          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: trace2");
           LOG.warn("IOException in getCompressedData; likely LZO corruption.", e);
           throw e;
         }
       }
-      //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: trace3");
     }
     // Note the no. of decompressed bytes read from 'current' block
     noUncompressedBytes += n;
-    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: noUncompressedBytes is >>>>"+noUncompressedBytes+"<<<<");
     return n;
   }
 
@@ -259,7 +246,6 @@ public class FpgaInputStream extends BlockDecompressorStream{
    */
   @Override
   protected int getCompressedData() throws IOException {
-    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: getCompressedData()");
     checkStream();
     verifyChecksums();
 
@@ -299,13 +285,11 @@ public class FpgaInputStream extends BlockDecompressorStream{
       buffer = new byte[compressedLen];
     }
     readFully(in, buffer, 0, compressedLen);
-    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: readFully finished");
     noCompressedBytes += compressedLen;
 
     // Send the read data to the decompressor.
     fdecompressor.setInput(buffer, 0, compressedLen);
-    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream:  compressedLen is "+compressedLen);
-    return compressedLen;
+     return compressedLen;
   }
 
   @Override
