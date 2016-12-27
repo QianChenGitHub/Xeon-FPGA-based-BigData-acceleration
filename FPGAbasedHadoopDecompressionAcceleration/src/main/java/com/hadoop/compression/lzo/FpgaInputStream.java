@@ -5,6 +5,7 @@ package com.hadoop.compression.lzo;
  * intel Corp.
  */
 
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -219,6 +220,7 @@ public class FpgaInputStream extends BlockDecompressorStream{
       }
       noUncompressedBytes = 0;
     }
+  //  System.out.println("com.hadoop.compression.lzo.FpgaInputStream: uncompressedBlockSize is "+uncompressedBlockSize+"<=================");
     decompressor.setDictionary(b,off,uncompressedBlockSize);
     int n = 0;
     while ((n = decompressor.decompress(b, off, len)) == 0) {
@@ -228,20 +230,27 @@ public class FpgaInputStream extends BlockDecompressorStream{
           return -1;
         }
       }
+  //    System.out.println("com.hadoop.compression.lzo.FpgaInputStream: decompressor.needsInput()");
       if (decompressor.needsInput()) {
         try {
+          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: try to getCompressedData()");
           getCompressedData();
+          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: getCompressedData() finished");
         } catch (EOFException e) {
+          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream:  trace1");
           eof = true;
           return -1;
         } catch (IOException e) {
+          //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: trace2");
           LOG.warn("IOException in getCompressedData; likely LZO corruption.", e);
           throw e;
         }
       }
+      //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: trace3");
     }
     // Note the no. of decompressed bytes read from 'current' block
     noUncompressedBytes += n;
+    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: noUncompressedBytes is >>>>"+noUncompressedBytes+"<<<<");
     return n;
   }
 
@@ -250,6 +259,7 @@ public class FpgaInputStream extends BlockDecompressorStream{
    */
   @Override
   protected int getCompressedData() throws IOException {
+    //System.out.println("com.hadoop.compression.lzo.FpgaInputStream: getCompressedData()");
     checkStream();
     verifyChecksums();
 
