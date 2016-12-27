@@ -2,12 +2,10 @@
  * Created by Chen Qian on 1/20/2016.
  * intel Corp.
  */
- 
-package com.hadoop.compression.lzo;
+ package com.hadoop.compression.lzo;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 
 public class FpgaLibraryLoader {
 
