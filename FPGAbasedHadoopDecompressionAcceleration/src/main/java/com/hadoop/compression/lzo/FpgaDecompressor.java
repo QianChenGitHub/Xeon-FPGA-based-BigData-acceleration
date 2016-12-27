@@ -40,32 +40,43 @@ public class FpgaDecompressor implements Decompressor {
     private boolean isCurrentBlockUncompressed;
     public int uncompressedDirectBufLen = 0;
     static {
+	    //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: try fpga lib loading");
             int itg=9;
             FpgaLibraryWrapper flw = new FpgaLibraryWrapper();
             int iii = flw.intMethod(itg);
+            //System.out.println("this.intMethod("+itg+") is "+iii);
+            //System.out.println("native wrapper validated now load fpga library");
             if(FpgaLibraryLoader.isFpgaLibraryLoaded()){
               //Initiate the FPGA library
               try{
                   initIDs();
                   FpgaLzoLoaded = true;
+                  //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor:  dec java fpga lzo library loaded!");
               } catch (Throwable t){
                   LOG.warn(t.toString());
                   FpgaLzoLoaded = false;
+		  //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: dec java fail to load fpga lzo library!");
               }
             } else {
+              //System.out.println("dec java fpga lzo library load failed!");
               LOG.error("Can't load FPGA LZO library!");
               FpgaLzoLoaded = false;
         }
     }
     //@Override
     public  FpgaDecompressor(int directBufferSize){
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: construct FpgaDecompressor object! with directBufferSize "+directBufferSize);
         this.directBufferSize = directBufferSize;
         //this.strategy = strategy;
 
         compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
         uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: uncompressedDirectBuf.remaining() is "+uncompressedDirectBuf.remaining());
         uncompressedDirectBuf.position(directBufferSize);
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: uncompressedDirectBuf.remaining() after position is "+uncompressedDirectBuf.remaining());
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: before init() fpgaDecompressor is "+fpgaDecompressor);
         init();//native hook~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: after init() fpgaDecompressor is "+fpgaDecompressor);
     }
 
     public  static boolean isFpgaLzoLoaded(){
@@ -89,6 +100,7 @@ public class FpgaDecompressor implements Decompressor {
     }
 
   public /*synchronized*/ void setInput(byte[] b, int off, int len) {
+    //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: >>>>>>>>>>setInput(b,off="+off+",len="+len+")");
     if (!isCurrentBlockUncompressed()) {
       if (len > directBufferSize) {
         LOG.warn("Decompression will fail because compressed buffer size :" +
@@ -121,6 +133,7 @@ public class FpgaDecompressor implements Decompressor {
     synchronized void setInputFromSavedData() {
       // If the current block is stored uncompressed, no need
       // to ready all the lzo machinery, because it will be bypassed.
+      //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: setInputFromSavedData()");
       if (!isCurrentBlockUncompressed()) {
         compressedDirectBufLen = Math.min(userBufLen, directBufferSize);
 
@@ -136,8 +149,10 @@ public class FpgaDecompressor implements Decompressor {
     }
 
     public synchronized boolean needsInput() {
+      //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: needsInput() triggred");
       // Consume remaining compressed data?
       if (uncompressedDirectBuf.remaining() > 0) {
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: uncompressedDirectBuf.remaining() > 0)");
         return false;
       }
 
@@ -145,8 +160,10 @@ public class FpgaDecompressor implements Decompressor {
       if (compressedDirectBufLen <= 0) {
         // Check if we have consumed all user-input
         if (userBufLen <= 0) {
+          //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: userBufLen <= 0");
           return true;
         } else {
+          //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: to enter setInputFromSavedData()");
           setInputFromSavedData();
         }
       }
@@ -155,44 +172,59 @@ public class FpgaDecompressor implements Decompressor {
     }
 
     public synchronized boolean finished() {
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: finished() triggered");
         // Check if 'lzo' says its 'finished' and
         // all uncompressed data has been consumed
         return (finished && uncompressedDirectBuf.remaining() == 0);
     }
     public synchronized int decompress(byte[] b, int off, int len)
             throws IOException {
-	     if (b == null) {
+	//System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: enter decompress function");
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: b.length is "+b.length+" off is "+off+" len is "+len);
+        if (b == null) {
             throw new NullPointerException();
         }
         if (off < 0 || len < 0 || off > b.length - len) {
             throw new ArrayIndexOutOfBoundsException();
         }
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: trace point1");
         int numBytes = 0;
         if (isCurrentBlockUncompressed()) {
             // The current block has been stored uncompressed, so just
             // copy directly from the input buffer.
+            //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: ??????????????current block has been stored uncompressed");
             numBytes = Math.min(userBufLen, len);
             System.arraycopy(userBuf, userBufOff, b, off, numBytes);
             userBufOff += numBytes;
             userBufLen -= numBytes;
         } else {
+            //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: trace point3");
             // Check if there is uncompressed data
             numBytes = uncompressedDirectBuf.remaining();
             if (numBytes > 0) {
                 numBytes = Math.min(numBytes, len);
+                //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: ????????????????? exist data in uncompressedDirectBuf numBytes is "+numBytes);
                 ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes);
                 return numBytes;
             }
+            //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor:  trace point4");
             // Check if there is data to decompress
             if (compressedDirectBufLen > 0) {
                 // Re-initialize the lzo's output direct-buffer
+                //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: trace point5");
                 uncompressedDirectBuf.rewind();
                 uncompressedDirectBuf.limit(directBufferSize);
                 //uncompressedDirectBuf.limit(uncompressedBlockSize);
 
                 // Decompress data
+		//System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: try to call fpga decompressing...====>jni check directBufferSize is "+ directBufferSize);
+		//System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: before decompress compressedDirectBufLen is "+compressedDirectBufLen+"  uncompressedDirectBuf.capacity() is "+uncompressedDirectBuf.capacity()+" uncompressedDirectBuf.remaining() is "+uncompressedDirectBuf.remaining());
                 numBytes = decompressBytesDirect(uncompressedDirectBufLen);//native hook~~~~~~~~~~~~~~~~~~~~~~~
+                //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: native decompressing finished compressedDirectBufLen is "+compressedDirectBufLen+" numBytes is "+numBytes+" <<<debug check");
+		//pause(1);
+	//        compressedDirectBufLen = 0;
                 uncompressedDirectBuf.limit(numBytes);
+
                 // Return atmost 'len' bytes
                 numBytes = Math.min(numBytes, len);
                 ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes);
@@ -203,17 +235,22 @@ public class FpgaDecompressor implements Decompressor {
         if (userBufLen <= 0) {
             finished = true;
         }
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: >?????????? return from decompress() numBytes is "+numBytes);
         return numBytes;
     }
     public synchronized void setDictionary(byte[] b, int off, int len){
+       //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: psudo setDictionary, used to pass uncompressedbuffSize "+len);
        uncompressedDirectBufLen = len;
     }
 ////////////////////////////un referenced function///////////////////////
     public synchronized boolean needsDictionary(){
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: needsDictionary()");
         return false;}
     public synchronized int getRemaining(){
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: getRemaining()");
         return userBufLen;}
     public synchronized void reset(){
+        //System.out.println("com.hadoop.compression.lzo.FpgaDecompressor: reset()");
         finished = false;
         compressedDirectBufLen = 0;
         uncompressedDirectBuf.limit(directBufferSize);
@@ -275,6 +312,7 @@ public class FpgaDecompressor implements Decompressor {
     }
     private /*synchronized*/ native static void __initIDs();
     private /*synchronized*/ native void __init();
+    //private native int decompressBytesDirect();//return numBytes of the decompressed files.
     private /*synchronized*/ native int __decompressBytesDirect(int uncompressedDirectBufLen);
-
+//    private native int intMethod();
 }
