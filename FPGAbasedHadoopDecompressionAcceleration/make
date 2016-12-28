@@ -2,7 +2,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/aalsdk-5.02/lib/:/mnt/disk1/liang/l
 C_INCLUDE_PATH=/usr/local/lzo-2.06/include \
 LIBRARY_PATH=/usr/local/lzo-2.06/lib \
 chmod +x /root/charles/Xeon-FPGA-based-BigData-acceleration/FPGAbasedHadoopDecompressionAcceleration/scripts/get_build_revision.sh
-#mvn clean test
+mvn clean test
 #cp ./target/test-classes/data/100000.txt.lzo /home/charles/fpga/project/lzo_decompress/iom2.5_lzo1.5-20151120_ww47/bin/lzo1x_1/
-mvn  package
+#mvn  package
 #cp target/hadoop-lzo-0.4.18.jar  ~/.m2/repository/com/hadoop/gplcompression/hadoop-lzo/0.4.18/hadoop-lzo-0.4.18.jar
