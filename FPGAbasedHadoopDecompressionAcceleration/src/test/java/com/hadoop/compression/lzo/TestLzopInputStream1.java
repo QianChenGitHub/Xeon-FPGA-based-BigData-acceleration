@@ -102,6 +102,7 @@ public class TestLzopInputStream1 extends TestCase {
 
         textBr.close();
         fpgaBr.close();
+        System.out.println("test finished");
     }
-
+    
 }
