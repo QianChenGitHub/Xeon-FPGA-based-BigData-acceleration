@@ -133,7 +133,7 @@ public class TestLzopInputStream extends TestCase {
     
     textBr.close();
     //lzoBr.close();
-    System.out.println("test finish!");
+    System.out.println("test finished!");
   }
   
 }
