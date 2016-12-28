@@ -79,7 +79,7 @@ public class TestLzopInputStream1 extends TestCase {
         System.out.println("fis is "+fis);
 
         DecompressorStream ds = new DecompressorStream(fis,fpgaDecompressor,lzoBufferSize);
-        private ByteBuffer bb;
+        ByteBuffer bb;
         bb = ByteBuffer.allocate(lzoBufferSize);
         int pos = bb.position();
         int lim = bb.limit();
