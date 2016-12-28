@@ -98,17 +98,22 @@ public class TestLzopInputStream extends TestCase {
     // Assumes the flat file is at filename, and the compressed version is filename.lzo
     File textFile = new File(inputDataPath, filename);
     File lzoFile = new File(inputDataPath, filename + new LzopCodec().getDefaultExtension());
+    File lzoFileSW = new File(inputDataPath, filename + new LzopCodec().getDefaultExtension());
+    
     LOG.info("Comparing files " + textFile + " and " + lzoFile);
 
     // Set up the text file reader.
     BufferedReader textBr = new BufferedReader(new InputStreamReader(new FileInputStream(textFile.getAbsolutePath())));
     // Set up the LZO reader.
-    /*
-    int lzoBufferSize = 256 * 1024;
-    LzopDecompressor lzoDecompressor = new LzopDecompressor(lzoBufferSize);
-    LzopInputStream lzoIn = new LzopInputStream(new FileInputStream(lzoFile.getAbsolutePath()), lzoDecompressor, lzoBufferSize);
+    
+    int lzoBufferSizeSW = 256 * 1024;
+    LzopDecompressor lzoDecompressor = new LzopDecompressor(lzoBufferSizeSW);
+    LzopInputStream lzoIn = new LzopInputStream(new FileInputStream(lzoFileSW.getAbsolutePath()), lzoDecompressor, lzoBufferSizeSW);
     BufferedReader lzoBr = new BufferedReader(new InputStreamReader(lzoIn));
-*/
+    while(lzoBr.readline == null){
+       System.out.println("SW Lzo decompressor read null values");
+    }
+    
     int lzoBufferSize = 256 * 1024;
     FpgaDecompressor fpgaDecompressor = new FpgaDecompressor(lzoBufferSize);
     FpgaInputStream  fpgaIn = new FpgaInputStream(new FileInputStream(lzoFile.getAbsolutePath()),fpgaDecompressor,lzoBufferSize);
