@@ -110,7 +110,7 @@ public class TestLzopInputStream extends TestCase {
     LzopDecompressor lzoDecompressor = new LzopDecompressor(lzoBufferSizeSW);
     LzopInputStream lzoIn = new LzopInputStream(new FileInputStream(lzoFileSW.getAbsolutePath()), lzoDecompressor, lzoBufferSizeSW);
     BufferedReader lzoBr = new BufferedReader(new InputStreamReader(lzoIn));
-    while(lzoBr.readline == null){
+    while(lzoBr.readline() == null){
        System.out.println("SW Lzo decompressor read null values");
     }
     
