@@ -12,7 +12,8 @@ Build and install LZO: make && sudo make install
 
 
 Quick Start Compile Scripts:
-You can use "sh make" command to quick compile and run project test.
+
+You can use "sh make" command at project root path to quick compile and run project test.
 
 Compile steps:
 
