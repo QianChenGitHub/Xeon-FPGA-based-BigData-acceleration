@@ -127,7 +127,7 @@ public class TestLzopInputStream extends TestCase {
         LOG.error("LZO line: [" + lzoLine + "], which has length " + lzoLine.length());
       }
       assertEquals(lzoLine, textLine);
-      System.out.println("fpga decompressed line is "+" lzoLine");
+      System.out.println("fpga decompressed line is "+ lzoLine);
     }
     // Verify that the lzo file is also exhausted at this point.
     //assertNull(lzoBr.readLine());
