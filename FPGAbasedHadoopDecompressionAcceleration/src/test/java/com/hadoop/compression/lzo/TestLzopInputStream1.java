@@ -43,13 +43,7 @@ public class TestLzopInputStream1 extends TestCase {
         inputDataPath = System.getProperty("test.build.data", "data");
     }
 
-    /**
-     * Test against a 100,000 line file with multiple LZO blocks.
-     */
-    public void testBigFile() throws NoSuchAlgorithmException, IOException,
-            InterruptedException {
-        runTest(bigFile);
-    }
+
 
     private void runTest(String filename) throws IOException,
             NoSuchAlgorithmException, InterruptedException {
