@@ -83,14 +83,6 @@ public class TestLzopInputStream extends TestCase {
   }
 
   /**
-   * Test against a 0 line file.
-   */
-  public void testEmptyFile() throws NoSuchAlgorithmException, IOException,
-  InterruptedException {
-    runTest(emptyFile);
-  }
-
-  /**
    * Test that reading an lzo-compressed file produces the same lines as reading the equivalent
    * flat file.  The test opens both the compressed and flat file, successively reading each
    * line by line and comparing.
