@@ -26,7 +26,7 @@ Compile steps:
 4. run test command: 
     'C_INCLUDE_PATH=/usr/local/lzo-2.06/include \
       LIBRARY_PATH=/usr/local/lzo-2.06/lib \ 
-      mvn clean test'
+      mvn test'
 
 5. run "mvn package" again to generate the target jar package. 
 
