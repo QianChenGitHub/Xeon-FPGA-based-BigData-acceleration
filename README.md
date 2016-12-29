@@ -36,6 +36,7 @@ Compile steps:
 6. deploy generated binaries into Hadoop paths.
 
 About native code compile:
+You can also use "sh make" command at nativeCMake folder to build native project.
 CMake was used to compile the native code of this project for the following reasons:
 
 1. FPGA accelerator api and related librarires are developed in CMake environment, easier to develop native weapper in CMake.   
