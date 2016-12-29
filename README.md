@@ -1,7 +1,9 @@
 # Xeon-FPGA-based-BigData-acceleration
 This repo is create to share FPGA based BigData Acceleration project.
 Current folder is our first project on BigData Acceleration work, which contains source code to integrate FPGA lzo decompression function into hadoop systems.
-Only software source code and library binaries are put into the related folders, if you need the lzo decompression bit stream used for programing the FPGA please contact me!
+
+Only software source code and library binaries are put into the related folders, if you need the lzo decompression bit stream used for programing the FPGA please send email to me!
+
 Documentations would be add on demand, any question about this project please feel free to contact me!
 
 before build the source code you need to install lzo library fisrt:
@@ -9,7 +11,6 @@ before build the source code you need to install lzo library fisrt:
 Download the latest LZO release from http://www.oberhumer.com/opensource/lzo/
 Configure LZO to build a shared library (required) and use a package-specific prefix (optional but recommended): ./configure --enable-shared --prefix /usr/local/lzo-2.06
 Build and install LZO: make && sudo make install
-
 
 Quick Start Compile Scripts:
 
